@@ -1,0 +1,29 @@
+<link rel="stylesheet" href="/stylesheets/style.css">
+
+<div class="login-container">
+    <div class="login-form">
+        <h2>Iniciar Sesión</h2>
+        ```
+
+---
+
+### 2. ¿Por qué sigue saliendo el logo de Keyrock?
+Si ves la imagen que me pasaste antes (la que tiene el logo de Keyrock arriba y un cuadro gris a la izquierda), es porque esa es la estructura del archivo `layout.ejs` original de FIWARE. 
+
+Cuando reemplazas solo el "contenido" (el `login.ejs`), Keyrock a veces lo mete dentro de una "plantilla maestra" que trae sus propios logos. Para "limpiar" la pantalla y que solo se vea tu diseño, tienes dos opciones:
+
+**Opción Rápida:**
+Agrega esto al principio de tu `style.css` para ocultar a la fuerza los elementos de Keyrock que te estorban:
+
+```css
+/* Ocultar el encabezado y el pie de página originales de Keyrock */
+header, footer, .navbar, .logo-header {
+    display: none !important;
+}
+
+/* Asegurar que tu contenedor ocupe toda la pantalla */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}

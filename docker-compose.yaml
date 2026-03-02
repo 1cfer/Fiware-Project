@@ -1,0 +1,159 @@
+version: "3.8"
+
+services:
+
+  # =========================
+  # Context Broker (Orion-LD)
+  # =========================
+  orion:
+    image: fiware/orion-ld
+    container_name: orion
+    depends_on:
+      - mongo-db
+    ports:
+      - "1026:1026"
+    command: -dbhost mongo-db -logLevel DEBUG
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail -s http://localhost:1026/version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==========
+  # MongoDB
+  # ==========
+  mongo-db:
+    image: mongo:4.2
+    volumes:
+      - mongo-db:/data/db
+
+  # =========================
+  # Quantum Leap
+  # =========================
+  quantumleap:
+    image: orchestracities/quantumleap
+    container_name: quantumleap
+    depends_on:
+      - crate-db
+    ports:
+      - "8668:8668"
+    environment:
+      - CRATE_HOST=crate-db
+      - LOGLEVEL=DEBUG
+
+  # ==========
+  # CrateDB
+  # ==========
+  crate-db:
+    image: crate
+    container_name: crate-db
+    ports:
+      - "4200:4200"
+      - "4300:4300"
+      - "5432:5432"
+    command: >
+      crate
+      -Cauth.host_based.enabled=false
+      -Ccluster.name=democluster
+      -Chttp.cors.enabled=true
+      -Chttp.cors.allow-origin="*"
+    environment:
+      - CRATE_HEAP_SIZE=4g
+    volumes:
+      - crate-db:/data
+
+  # ==========
+  # Grafana
+  # ==========
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    depends_on:
+      - crate-db
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana:/var/lib/grafana
+
+  # =========================
+  # Keyrock IDM
+  # =========================
+  keyrock:
+    image: mi-keyrock-estetico
+    container_name: keyrock
+    depends_on:
+      - mysql-db
+    ports:
+      - "7000:3000"
+      - '443:443'
+    environment:
+      - DEBUG=idm:*
+      - IDM_DB_HOST=mysql-db
+      - IDM_DB_USER=root
+      - IDM_DB_PASS=secret
+      - IDM_HOST=http://keyrock:3000
+      - IDM_PORT=3000
+
+      # Admin user
+      - IDM_ADMIN_USER=admin
+      - IDM_ADMIN_EMAIL=admin@test.com
+      - IDM_ADMIN_PASS=1234
+
+      # JWT
+      - IDM_JWT_ENABLED=true
+      - IDM_TOKEN_SECRET=a7f7f9c4acd5e884
+      - IDM_TOKEN_TYPE=jwt
+
+  # ==========
+  # MySQL
+  # ==========
+  mysql-db:
+    image: mysql:5.7
+    container_name: mysql-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+    volumes:
+      - mysql-db:/var/lib/mysql
+
+  # =========================
+  # Wilma PEP Proxy
+  # =========================
+  # wilma:
+  #   image: fiware/pep-proxy:8.3.0
+  #   container_name: wilma
+  #   depends_on:
+  #     - orion
+  #     - keyrock
+  #   ports:
+  #     - "1027:1027"
+  #   environment:
+  #     - PEP_PROXY_PORT=1027
+
+  #     # Orion (protected service)
+  #     - PEP_PROXY_APP_HOST=orion
+  #     - PEP_PROXY_APP_PORT=1026
+
+  #     # Keyrock
+  #     - PEP_PROXY_IDM_HOST=keyrock
+  #     - PEP_PROXY_IDM_PORT=3000
+  #     - PEP_PROXY_IDM_SSL_ENABLED=false
+
+  #     # Auth
+  #     - PEP_PROXY_AUTH_ENABLED=true
+  #     - PEP_PROXY_USERNAME=pep_proxy_c6480eef-e003-41a3-a2c8-2eb375975082
+  #     - PEP_PROXY_PASSWORD=pep_proxy_eab1dbed-344a-43a7-b785-8d4bc63681b1
+  #     - PEP_PROXY_APP_ID=bf67d3de-3ada-49e4-bab0-f1358afbc0fa
+
+  #     # Public paths
+  #     - PEP_PROXY_PUBLIC_PATHS=/version
+
+  #     # Debug
+  #     - PEP_PROXY_DEBUG=true
+  #     - DEBUG=*
+
+volumes:
+  mongo-db:
+  crate-db:
+  grafana:
+  mysql-db:
