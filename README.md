@@ -37,4 +37,3 @@ La infraestructura está configurada para recibir y procesar datos provenientes 
     docker ps
     ```
 
-Desarrollado por: Fernando Castro - Ingeniería Electrónica.
